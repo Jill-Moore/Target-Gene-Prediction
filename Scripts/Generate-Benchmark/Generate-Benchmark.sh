@@ -31,7 +31,11 @@ grep "Enhancer" $masterDir/Cell-Type-Specific/Five-Group/$file*.bed > \
 if [ $linkType == "ChIA-PET" ] || [ $linkType == "Hi-C" ]
 then
     python $scriptDir/process.chiapet.py $links enhancers.bed $tss \
-    $name-Blacklist.txt > $name-Links.txt
+        $name-Blacklist.txt > $name-Links.txt
+elif [ $linkType == "eQTL" ]
+then
+    python $scriptDir/process.chiapet.py $links enhancers.bed $tss \
+        $name-Blacklist.txt > $name-Links.txt  
 fi
 
 cutoff=$(python $scriptDir/calculate.distance.py $tss enhancers.bed \
@@ -72,7 +76,3 @@ cat $name-Training.txt $name-Test.txt $name-Validation.txt > $name-Total.txt
 
 rm bed1 bed2 out1 out2 tmp train val positive negative range output test
 rm ccre-list.txt enhancers.bed intersection2.bed
-
-
-
-
