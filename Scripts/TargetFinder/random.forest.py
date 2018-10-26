@@ -71,7 +71,7 @@ def Run_Model(trainFeat,trainLab, outputPrefix, cvList, cvGroups, header,\
                 trainMatrix.append(trainFeat[j])
                 trainY.append(trainLab[j])
             j+=1
-        Run_RF(trainY, trainMatrix, testY, testMatrix, outputPrefix, 25, \
+        Run_RF(trainY, trainMatrix, testY, testMatrix, outputPrefix, 5, \
             group, header, outputDir, version)
         i+=1    
     return
