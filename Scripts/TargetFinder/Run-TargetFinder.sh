@@ -1,3 +1,11 @@
+#!/bin/bash
+#SBATCH --nodes 1
+#SBATCH --time=12:00:00
+#SBATCH --mem=10G
+#SBATCH --output=/home/moorej3/Job-Logs/jobid_%A.output
+#SBATCH --error=/home/moorej3/Job-Logs/jobid_%A.error
+#SBATCH --partition=12hours
+
 data=$1
 version=v1
 
