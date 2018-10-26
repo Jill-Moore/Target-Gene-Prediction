@@ -1,19 +1,22 @@
 data=$1
+version=v1
 
-setDir=/data/zusers/moorej3/hg19-Link-Benchmark/
-val=$setDir/$data-Validation-Set.txt 
-train=$setDir/$data-Training-Set.txt
+setDir=~/Lab/Target-Gene/Benchmark
+train=$setDir/$data-Benchmark.$version.txt
 peakDir=/data/zusers/garnickk/targetfinder/GM12878/peaks/
-featureDir=~/Target-Gene/Target-Finder/Feature-Matrices
+featureDir=~/Lab/Target-Gene/Target-Finder/Feature-Matrices
+outputDir=~/Lab/Target-Gene/Target-Finder/Results
 enhancers=GM12878-Enhancers.bed
+scriptDir=~/Projects/Target-Gene-Prediction/Scripts/TargetFinder
 tss=TSS-Filtered.bed
 
+mkdir -p $outputDir
 
 ######## Creating Enhancer Feature Matrix ################
 if [ ! -f "$featureDir/$data-Enhancer-Feature-Matrix.txt" ]
 then
     echo -e "Generating enhancer feature matrix..."
-    cat $val $train | awk '{print $1}' | sort -u  > cres
+    cat $train | awk '{print $1}' | sort -u  > cres
     awk 'FNR==NR {x[$1];next} ($4 in x)' cres $enhancers | \
     awk '{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $9 }' > enhancers
     for k in $(seq 99)
@@ -35,7 +38,7 @@ fi
 if [ ! -f "$featureDir/$data-TSS-Feature-Matrix.txt" ]
 then
     echo -e "Generating tss feature matrix..."
-    cat $val $train | awk '{print $2}' | sort -u  > genes
+    cat $train | awk '{print $2}' | sort -u  > genes
     tss=TSS-Filtered.bed
     awk 'FNR==NR {x[$1];next} ($7 in x)' genes $tss | \
         awk '{print $1 "\t" $2-500 "\t" $3+500 "\t" $4 "\t" $7 }' > tss
@@ -57,7 +60,7 @@ fi
 if [ ! -f "$featureDir/$data-Window-Feature-Matrix.txt" ]
 then
     echo -e "Generating window feature matrix..."
-    cat $val $train | sort -u > pairs
+    cat $train | sort -u > pairs
     python create.window.py $tss $enhancers pairs > windows
     for k in $(seq 99)
     do
@@ -77,7 +80,7 @@ fi
 if [ ! -f "$featureDir/$data-Distance.txt" ]
 then
     echo -e "Generating distance matrix..."
-    cat $val $train | sort -u > pairs
+    cat $train | sort -u > pairs
     python calculate.distance.py $tss $enhancers pairs > \
         $featureDir/$data-Distance.txt 
 fi
@@ -85,14 +88,14 @@ fi
 
 ######## Running Random Forest/GBM ################
 echo -e "Running Model..."
-cat $val $train | awk '{print $2}' | sort -u  > genes
+cat $train | awk '{print $2}' | sort -u  > genes
 tss=TSS-Filtered.bed
 awk 'FNR==NR {x[$1];next} ($7 in x)' genes $tss | \
 awk '{print $1 "\t" $2-500 "\t" $3+500 "\t" $4 "\t" $7 }' > tss
 
-python rf.targetfinder.window.py $train $val $featureDir/$data-Enhancer-Feature-Matrix.txt \
+python $scriptDir/random.forest.py $train $featureDir/$data-Enhancer-Feature-Matrix.txt \
     $featureDir/$data-TSS-Feature-Matrix.txt $featureDir/$data-Window-Feature-Matrix.txt \
-    tss $data > $data-RF-Features.txt
+    tss $data $outputDir $version
 
 #python gbm.targetfinder.window.py $train $val $featureDir/$data-Enhancer-Feature-Matrix.txt \
 #    $featureDir/$data-TSS-Feature-Matrix.txt $featureDir/$data-Window-Feature-Matrix.txt \
