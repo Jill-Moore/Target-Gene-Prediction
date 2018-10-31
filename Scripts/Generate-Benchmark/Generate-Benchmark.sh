@@ -34,45 +34,25 @@ then
         $name-Blacklist.txt > $name-Links.txt
 elif [ $linkType == "eQTL" ]
 then
-    python $scriptDir/process.chiapet.py $links enhancers.bed $tss \
-        $name-Blacklist.txt > $name-Links.txt  
+    python $scriptDir/process.eqtl.py $links enhancers.bed $tss \
+        > $name-Links.txt  
 fi
 
 cutoff=$(python $scriptDir/calculate.distance.py $tss enhancers.bed \
     $name-Links.txt $name-Distance.txt)
 
-awk '{if ($3 >= '$cutoff') print $0}' $name-Distance.txt > \
+awk '{if ($3 <= '$cutoff') print $0}' $name-Distance.txt > \
     $name-Distance.cutoff.txt
 
 python $scriptDir/create.experiment.sets.py $name-Distance.cutoff.txt \
-    $tss enhancers.bed output $cutoff $name-Blacklist.txt
+    $tss enhancers.bed output $cutoff $name $linkType
 
 awk '{print $1}' positive | sort -u > ccre-list.txt
-half=$(wc -l ccre-list.txt | awk '{printf "%.0f", $1/2}')
+awk 'FNR==NR {x[$1];next} ($4 in x)' ccre-list.txt enhancers.bed > tmp.bed
+awk '{print $1 "\t" $2 "\t" 1}' positive > total
+awk '{print $1 "\t" $2 "\t" 0}' negative >> total
 
-sort -R ccre-list.txt | head -n $half > train
-awk 'FNR==NR {x[$0];next} !($0 in x)' train ccre-list.txt > tmp
-half=$(wc -l tmp | awk '{printf "%.0f", $1/2}')
+python $scriptDir/assign.groups.py tmp.bed total > $name-Benchmark.v1.txt
 
-sort -R tmp | head -n $half > val
-awk 'FNR==NR {x[$0];next} !($0 in x)' val tmp > test
-
-awk 'FNR==NR {x[$1];next} ($1 in x)' train positive | \
-    awk '{print $1 "\t" $2 "\t" 1}' > $name-Training.txt
-awk 'FNR==NR {x[$1];next} ($1 in x)' train negative | \
-    awk '{print $1 "\t" $2 "\t" 0}' >> $name-Training.txt
-
-awk 'FNR==NR {x[$1];next} ($1 in x)' test positive | \
-    awk '{print $1 "\t" $2 "\t" 1}' > $name-Test.txt
-awk 'FNR==NR {x[$1];next} ($1 in x)' test negative | \
-    awk '{print $1 "\t" $2 "\t" 0}' >> $name-Test.txt
-
-awk 'FNR==NR {x[$1];next} ($1 in x)' val positive | \
-    awk '{print $1 "\t" $2 "\t" 1}' > $name-Validation.txt
-awk 'FNR==NR {x[$1];next} ($1 in x)' val negative | \
-    awk '{print $1 "\t" $2 "\t" 0}' >> $name-Validation.txt
-
-cat $name-Training.txt $name-Test.txt $name-Validation.txt > $name-Total.txt
-
-rm bed1 bed2 out1 out2 tmp train val positive negative range output test
-rm ccre-list.txt enhancers.bed intersection2.bed
+rm bed1 bed2 out1 out2 positive negative range output
+rm ccre-list.txt enhancers.bed intersection2.bed total tmp.bed

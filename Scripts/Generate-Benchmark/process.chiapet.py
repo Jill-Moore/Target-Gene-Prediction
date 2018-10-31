@@ -91,4 +91,4 @@ for entry in bedDict:
 		print >> bl , i+"\t"+j+"\t"+"Link-"+str(n)
 		n+=1
 tsv.close()
-bl.close()        
+bl.close() 

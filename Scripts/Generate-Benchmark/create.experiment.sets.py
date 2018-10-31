@@ -39,6 +39,7 @@ def Determine_Nearby_TSS(enhancer, tss, D):
             predictionDict[line[3]].append(line[16])
             predictionDict[line[3]]=list(set(predictionDict[line[3]]))
     return predictionDict
+
 def Create_Test_Set(tsss, linkDict, blackListDict):
     positive=open("positive", "w")
     negative=open("negative", "w")
@@ -50,8 +51,21 @@ def Create_Test_Set(tsss, linkDict, blackListDict):
 		elif prediction not in blackListDict:
 		    print >> negative, prediction, "\t", gene
                 elif gene not in blackListDict[prediction]:
+                    print >> negative, prediction, "\t", gene                
+    positive.close()
+    negative.close()
+
+
+def Create_Test_Set_eQTL(tsss, linkDict):
+    positive=open("positive", "w")
+    negative=open("negative", "w")
+    for prediction in tsss:
+        if prediction in linkDict:
+            for gene in tsss[prediction]:
+                if gene in linkDict[prediction]:
+                    print >> positive, prediction, "\t", gene, "\t", linkDict[prediction][gene]
+                else:
                     print >> negative, prediction, "\t", gene
-                
     positive.close()
     negative.close()
                     
@@ -60,14 +74,19 @@ tss=sys.argv[2]
 enhancer=sys.argv[3]
 output=open(sys.argv[4], "w")
 D=int(round(float(sys.argv[5])))
-bl=open(sys.argv[6])
-print "Now processing links..."
+mode=sys.argv[7]
+
 linkDict=Process_Links(links)
-blackListDict=Process_Links(bl)
-print "Now determining nearby tss...."
 tsss=Determine_Nearby_TSS(enhancer, tss, D)
-print "Now creating test set...."
-Create_Test_Set(tsss, linkDict, blackListDict)
-    
+
+if mode == "Hi-C" or mode == "ChIA-PET":
+    bl=open(sys.argv[6]+"-Blacklist.txt")
+    blackListDict=Process_Links(bl)
+    bl.close()
+    Create_Test_Set(tsss, linkDict, blackListDict)
+else:
+    Create_Test_Set_eQTL(tsss, linkDict)    
+
+
 output.close()
 links.close()
