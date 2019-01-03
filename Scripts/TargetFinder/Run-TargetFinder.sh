@@ -6,14 +6,14 @@
 #SBATCH --error=/home/moorej3/Job-Logs/jobid_%A.error
 #SBATCH --partition=12hours
 
-data=NewCalls-HiC
+data=Ruan-RNAPII
 version=v1
 
 setDir=~/Lab/Target-Gene/Benchmark
 train=$setDir/$data-Benchmark.$version.txt
 peakDir=/data/zusers/garnickk/targetfinder/GM12878/peaks/
 featureDir=~/Lab/Target-Gene/Target-Finder/Feature-Matrices
-outputDir=~/Lab/Target-Gene/Target-Finder/Results
+outputDir=~/Lab/Target-Gene/Target-Finder/Results-Distance
 enhancers=~/Lab/Target-Gene/Target-Finder/GM12878-Enhancers.bed
 scriptDir=~/Projects/Target-Gene-Prediction/Scripts/TargetFinder
 tss=~/Lab/Reference/Human/hg19/Gencode19/TSS.Filtered.bed
@@ -103,12 +103,12 @@ cat $train | awk '{print $2}' | sort -u  > genes
 awk 'FNR==NR {x[$1];next} ($7 in x)' genes $tss | \
 awk '{print $1 "\t" $2-500 "\t" $3+500 "\t" $4 "\t" $7 }' > tss
 
-python $scriptDir/random.forest.py $train $featureDir/$data-Enhancer-Feature-Matrix.txt \
-    $featureDir/$data-TSS-Feature-Matrix.txt $featureDir/$data-Window-Feature-Matrix.txt \
-    tss $data $outputDir $version
-
-#python gbm.targetfinder.window.py $train $val $featureDir/$data-Enhancer-Feature-Matrix.txt \
+#python $scriptDir/gradient.boosting.v2.py $train $featureDir/$data-Enhancer-Feature-Matrix.txt \
 #    $featureDir/$data-TSS-Feature-Matrix.txt $featureDir/$data-Window-Feature-Matrix.txt \
-#    tss $data > $data-GBM-Features.txt
+#    $featureDir/$data-Distance.txt tss $data $outputDir $version
+
+python $scriptDir/gradient.boosting.v2.py $train $featureDir/$data-Enhancer-Feature-Matrix.txt \
+    $featureDir/$data-TSS-Feature-Matrix.txt \
+    $featureDir/$data-Distance.txt tss $data $outputDir $version
 
 rm -r /tmp/moorej3/$SLURM_JOBID-$jid
